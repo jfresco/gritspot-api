@@ -2,12 +2,13 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const app = express()
 
+const workouts = require('./routes/workouts')
+
 // Ability to parse JSON payloads
 app.use(bodyParser.json())
 
-app.get('/workouts', (req, res) => {
-  res.send({ result: 'ok' })
-})
+// Include API endpoints
+app.use(workouts)
 
 // Handle not found endpoints
 app.use((req, res) => {
