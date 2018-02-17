@@ -49,7 +49,11 @@ describe('Workouts endpoints', () => {
   describe('POST /workout/{id}/allocations', () => {
     it('allocates sensors', () => {
       const participants = ['aaa', 'bbb', 'ccc']
-      const availableSensors = Sensors.getAllocatable().slice(0, 3).map(s => s.attrs.id)
+      const availableSensors = Sensors.getAllocatable()
+        .filter(s => !s.attrs.owner_id)
+        .slice(0, 3)
+        .map(s => s.attrs.id)
+
       return request(app)
         .post('/workout/123/allocations')
         .send({ participants })
@@ -65,6 +69,41 @@ describe('Workouts endpoints', () => {
           // Validate that the DB holds the same data
           const { attrs } = Workouts.findById('123')
           expect(body.workout).to.deep.equal(attrs)
+        })
+    })
+
+    it('allocates sensors to owners and non-owners', () => {
+      const participants = ['rstarr', 'sam', 'pmaccartney', 'max', 'jlennon']
+
+      return request(app)
+        .post('/workout/48582/allocations')
+        .send({ participants })
+        .expect(200)
+        .then(({ body }) => {
+          // Validate that the response contains the allocations
+          expect(body).to.have.nested.property('workout.allocations').that.is.an('array')
+          expect(body.workout.allocations.some(a => a.sensor_id === '55' && a.user_id === 'max'))
+          expect(body.workout.allocations.some(a => a.sensor_id === '13' && a.user_id === 'sam'))
+
+          // Validate that the DB holds the same data
+          const { attrs } = Workouts.findById('48582')
+          expect(body.workout).to.deep.equal(attrs)
+        })
+    })
+
+    it('fails allocating sensors to owners and non-owners when there are not enough sensors', () => {
+      const participants = ['abc', 'rstarr', 'sam', 'pmaccartney', 'max', 'jlennon', 'xyz', 'asdf']
+      const before = Workouts.findById('48582')
+      return request(app)
+        .post('/workout/48582/allocations')
+        .send({ participants })
+        .expect(400)
+        .then(({ body }) => {
+          expect(body.error.startsWith('Not enough sensors'))
+
+          // Validate that the DB holds the same data
+          const after = Workouts.findById('48582')
+          expect(after.attrs).to.deep.equal(before.attrs)
         })
     })
 

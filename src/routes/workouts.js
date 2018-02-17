@@ -41,7 +41,7 @@ router.get('/workout/:id', fetchWorkout, ({ workout }, res) => res.send({ workou
  * POST /workout/{id}/allocations
  *
  * Allocates sensors to users in a given workout. The `allocations` attribute gets populated with `Allocation`
- * objects.
+ * objects. If there is not enough sensors, it will fail and respond with HTTP status code 400.
  *
  * @param {string} id - A workout ID
  * @param {string[]} body.participants - Array of User IDs
@@ -49,13 +49,16 @@ router.get('/workout/:id', fetchWorkout, ({ workout }, res) => res.send({ workou
  */
 
 router.post('/workout/:id/allocations', fetchWorkout, ({ workout, body: { participants } }, res) => {
-  const sensors = Sensors.getAllocatable().map(s => s.attrs.id)
-  if (participants.length > sensors.length) {
-    return res.status(400).send({ error: `Not enough sensors (${sensors.length})` })
+  const sensors = Sensors.getAllocatable()
+  try {
+    workout.allocate(participants, sensors)
+    res.send({ workout: workout.attrs })
+  } catch (e) {
+    if (e.code === 'INSUFFICIENT_SENSORS') {
+      return res.status(400).send({ error: 'Not enough sensors' })
+    }
+    throw e
   }
-
-  workout.allocate(participants, sensors)
-  res.send({ workout: workout.attrs })
 })
 
 module.exports = router

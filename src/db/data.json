@@ -28,15 +28,27 @@
     },
     {
       "id": "08209",
-      "is_allocatable": false
+      "is_allocatable": false,
+      "owner_id": "psmith"
     },
     {
       "id": "110809",
-      "is_allocatable": true
+      "is_allocatable": true,
+      "owner_id": "jdoe"
+    },
+    {
+      "id": "55",
+      "is_allocatable": true,
+      "owner_id": "max"
     },
     {
       "id": "0112809",
       "is_allocatable": true
+    },
+    {
+      "id": "13",
+      "is_allocatable": true,
+      "owner_id": "sam"
     }
   ]
 }
