@@ -1,4 +1,5 @@
 const express = require('express')
+const { omit } = require('lodash')
 const router = express.Router()
 const { Workouts, Sensors } = require('../db')
 
@@ -21,7 +22,7 @@ function fetchWorkout (req, res, next) {
  */
 
 router.get('/workouts', (req, res) => {
-  const workouts = Workouts.all().map(w => ({ id: w.id }))
+  const workouts = Workouts.all().map(({ attrs }) => omit(attrs, 'allocations'))
   res.send({ workouts })
 })
 
