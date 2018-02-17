@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node src",
+    "debug": "node debug src",
     "test": "mocha src/**/*.spec.js",
     "lint": "eslint ."
   },
