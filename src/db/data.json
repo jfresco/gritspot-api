@@ -16,5 +16,27 @@
       "id": "39483294",
       "allocations": []
     }
+  ],
+  "sensors": [
+    {
+      "id": "0809",
+      "is_allocatable": true
+    },
+    {
+      "id": "08091",
+      "is_allocatable": true
+    },
+    {
+      "id": "08209",
+      "is_allocatable": false
+    },
+    {
+      "id": "110809",
+      "is_allocatable": true
+    },
+    {
+      "id": "0112809",
+      "is_allocatable": true
+    }
   ]
 }
