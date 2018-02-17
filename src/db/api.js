@@ -1,4 +1,4 @@
-const { Workout } = require('./entities')
+const { Workout, Sensor } = require('./entities')
 
 module.exports = function (data) {
   const Workouts = {
@@ -14,15 +14,16 @@ module.exports = function (data) {
 
   const Sensors = {
     all: () => {
-      return data.sensors
+      return data.sensors.map(Sensor)
     },
 
     findById: (id) => {
-      return data.sensors.find(s => s.id === id)
+      const sensor = data.sensors.find(s => s.id === id)
+      return sensor && Sensor(sensor)
     },
 
     getAllocatable: () => {
-      return data.sensors.filter(s => s.is_allocatable)
+      return data.sensors.filter(s => s.is_allocatable).map(Sensor)
     }
   }
 

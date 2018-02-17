@@ -3,12 +3,14 @@ const bodyParser = require('body-parser')
 const app = express()
 
 const workouts = require('./routes/workouts')
+const sensors = require('./routes/sensors')
 
 // Ability to parse JSON payloads
 app.use(bodyParser.json())
 
 // Include API endpoints
 app.use(workouts)
+app.use(sensors)
 
 // Handle not found endpoints
 app.use((req, res) => {

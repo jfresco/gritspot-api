@@ -49,7 +49,7 @@ router.get('/workout/:id', fetchWorkout, ({ workout }, res) => res.send({ workou
  */
 
 router.post('/workout/:id/allocations', fetchWorkout, ({ workout, body: { participants } }, res) => {
-  const sensors = Sensors.getAllocatable().map(s => s.id)
+  const sensors = Sensors.getAllocatable().map(s => s.attrs.id)
   if (participants.length > sensors.length) {
     return res.status(400).send({ error: `Not enough sensors (${sensors.length})` })
   }

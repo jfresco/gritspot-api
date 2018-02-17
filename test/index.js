@@ -49,7 +49,7 @@ describe('Workouts endpoints', () => {
   describe('POST /workout/{id}/allocations', () => {
     it('allocates sensors', () => {
       const participants = ['aaa', 'bbb', 'ccc']
-      const availableSensors = Sensors.getAllocatable().slice(0, 3).map(s => s.id)
+      const availableSensors = Sensors.getAllocatable().slice(0, 3).map(s => s.attrs.id)
       return request(app)
         .post('/workout/123/allocations')
         .send({ participants })
@@ -69,7 +69,7 @@ describe('Workouts endpoints', () => {
     })
 
     it('fails if there are not enough sensors', () => {
-      const availableSensors = Sensors.getAllocatable().map(s => s.id)
+      const availableSensors = Sensors.getAllocatable().map(s => s.attrs.id)
       const participants = times(availableSensors.length + 5, i => `user_${i}`)
       return request(app)
         .post('/workout/123/allocations')
@@ -79,5 +79,45 @@ describe('Workouts endpoints', () => {
           expect(body.error.startsWith('Not enough sensors'))
         })
     })
+  })
+})
+
+describe('Sensors endpoints', () => {
+  describe('PUT /sensor/{id}', () => {
+    afterEach(() => {
+      Sensors.findById('0809').attrs.is_allocatable = true
+    })
+
+    it('disables broken sensors', () =>
+      request(app)
+        .put('/sensor/0809')
+        .send({ is_allocatable: '' })
+        .expect(200)
+        .then(response => {
+          expect(response.body).to.have.nested.property('sensor.id', '0809')
+          expect(response.body).to.have.nested.property('sensor.is_allocatable', false)
+        })
+    )
+
+    it('responds with 404 when the sensor is not found', () =>
+      request(app)
+        .put('/sensor/08a09')
+        .send({ is_allocatable: '' })
+        .expect(404)
+    )
+
+    it('fails when the sensor is already disabled', () =>
+      request(app)
+        .put('/sensor/08209')
+        .send({ is_allocatable: '' })
+        .expect(400)
+    )
+
+    it('fails with invalid body', () =>
+      request(app)
+        .put('/sensor/08209')
+        .send({ is_allocatable: false })
+        .expect(400)
+    )
   })
 })
