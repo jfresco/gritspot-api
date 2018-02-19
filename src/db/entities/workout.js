@@ -32,6 +32,22 @@ module.exports = function Workout (attrs) {
 
       // Commit transaction
       attrs.allocations = allocations
+    },
+
+    reassign: function (userId, sensorId) {
+      attrs.allocations = attrs.allocations.map(a => Object.assign(a, {
+        sensor_id: a.user_id === userId
+          ? sensorId
+          : a.sensor_id
+      }))
+    },
+
+    getUsedSensorIds: function () {
+      return attrs.allocations.map(a => a.sensor_id)
+    },
+
+    removeAllocations: function () {
+      attrs.allocations = []
     }
   }
 

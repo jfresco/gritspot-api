@@ -6,6 +6,10 @@ const app = require('../app')
 const { Sensors, Workouts } = require('../db')
 
 describe('Workouts endpoints', () => {
+  afterEach(() => {
+    Workouts.findById('123').removeAllocations()
+  })
+
   describe('GET /workouts', () => {
     it('gets all workouts', () =>
       request(app)
@@ -44,6 +48,64 @@ describe('Workouts endpoints', () => {
         .get('/workout')
         .expect(404)
     )
+  })
+
+  describe('PUT /workout/{id}/allocations', () => {
+    it('modifies user allocation', async () => {
+      const participants = ['aaa', 'bbb', 'ccc']
+
+      await request(app)
+        .post('/workout/123/allocations')
+        .send({ participants })
+        .expect(200)
+
+      const before = Workouts.findById('123').attrs.allocations.map(a => a.sensor_id)
+
+      const { body } = await request(app)
+        .put('/workout/123/allocations')
+        .send({ user_id: 'bbb' })
+        .expect(200)
+
+      const after = Workouts.findById('123').attrs.allocations.map(a => a.sensor_id)
+
+      // Validate response
+      expect(body.workout.allocations[0].sensor_id).to.equal(after[0])
+      expect(body.workout.allocations[1].sensor_id).to.equal(after[1])
+      expect(body.workout.allocations[2].sensor_id).to.equal(after[2])
+
+      // Validate data consistency
+      expect(before[0]).to.equal(after[0])
+      expect(before[1]).to.not.equal(after[1])
+      expect(before[2]).to.equal(after[2])
+    })
+
+    it('fails if user has no allocation', async () => {
+      const participants = ['aaa', 'bbb', 'ccc']
+
+      await request(app)
+        .post('/workout/123/allocations')
+        .send({ participants })
+        .expect(200)
+
+      return request(app)
+        .put('/workout/123/allocations')
+        .send({ user_id: 'xxx' })
+        .expect(400)
+    })
+
+    it('fails if there are not enough sensors', async () => {
+      const participants = ['aaa', 'bbb', 'ccc', 'xxx']
+
+      await request(app)
+        .post('/workout/123/allocations')
+        .send({ participants })
+        .expect(200)
+
+      return request(app)
+        .put('/workout/123/allocations')
+        .send({ user_id: 'bbb' })
+        .expect(400)
+    })
   })
 
   describe('POST /workout/{id}/allocations', () => {

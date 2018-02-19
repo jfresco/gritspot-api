@@ -62,4 +62,54 @@ router.post('/workout/:id/allocations', fetchWorkout, ({ io, workout, body: { pa
   }
 })
 
+/**
+ * PUT /workout/{id}/allocations
+ *
+ * Modifies allocation for one user. Returns 400 if there are no sensors available. Does not disable sensor.
+ *
+ * @param {string} id - A workout ID
+ * @param {string} body.user_id - User ID
+ * @return {json} The resulting `Workout`
+ */
+
+router.put('/workout/:id/allocations', fetchWorkout, (req, res) => {
+  const { user_id: userId } = req.body
+  const participantIds = req.workout.attrs.allocations.map(a => a.user_id)
+
+  if (!participantIds.includes(userId)) {
+    return res.status(400).send({ error: 'User does not participate in this workout' })
+  }
+
+  const usedSensorIds = req.workout.getUsedSensorIds()
+  const notUsed = s => !usedSensorIds.includes(s.attrs.id)
+  const notOwned = s => !s.attrs.owner_id || s.attrs.owner_id === userId
+
+  // Get available sensors (that are allocatable, not used in the current workout, and not owned)
+  const sensors = Sensors.getAllocatable()
+    .filter(notUsed)
+    .filter(notOwned)
+    .map(s => s.attrs.id)
+
+  if (sensors.length === 0) {
+    return res.status(400).send({ error: 'Not enough sensors' })
+  }
+
+  // Grab the first sensor in the list
+  const sensorId = sensors[0]
+
+  // Commit reassignment
+  req.workout.reassign(userId, sensorId)
+
+  // Push notification to subscribed clients
+  req.io.emit('sensor-reassignment', {
+    allocation: {
+      user_id: userId,
+      sensor_id: sensorId
+    }
+  })
+
+  // Respond request with the workout attributes
+  res.send({ workout: req.workout.attrs })
+})
+
 module.exports = router

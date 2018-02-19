@@ -49,6 +49,10 @@
       "id": "13",
       "is_allocatable": true,
       "owner_id": "sam"
+    },
+    {
+      "id": "24",
+      "is_allocatable": true
     }
   ]
 }
