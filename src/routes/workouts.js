@@ -48,10 +48,11 @@ router.get('/workout/:id', fetchWorkout, ({ workout }, res) => res.send({ workou
  * @return {json} The resulting `Workout`
  */
 
-router.post('/workout/:id/allocations', fetchWorkout, ({ workout, body: { participants } }, res) => {
+router.post('/workout/:id/allocations', fetchWorkout, ({ io, workout, body: { participants } }, res) => {
   const sensors = Sensors.getAllocatable()
   try {
     workout.allocate(participants, sensors)
+    io.emit('allocation', { workout: workout.attrs })
     res.send({ workout: workout.attrs })
   } catch (e) {
     if (e.code === 'INSUFFICIENT_SENSORS') {

@@ -2,6 +2,19 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const app = express()
 
+// Enhance server with real-time features
+const server = require('http').Server(app)
+const io = require('socket.io')(server)
+
+// Serve static files
+app.use(express.static('src/static'))
+
+// Make `socket.io` instance available on all middlewares
+app.use((req, res, next) => {
+  req.io = io
+  next()
+})
+
 const workouts = require('./routes/workouts')
 const sensors = require('./routes/sensors')
 
@@ -23,4 +36,4 @@ app.use((error, req, res, next) => {
   res.status(500).send({ error: 'Server error' })
 })
 
-module.exports = app
+module.exports = server

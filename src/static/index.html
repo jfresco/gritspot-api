@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GRITSpot</title>
+  <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <h1>Hai</h1>
+  <script type="text/javascript">
+    var socket = io()
+    socket.on('allocation', function (workout) {
+      console.log('sensors allocated:', workout)
+    })
+
+    socket.on('sensor-disabled', function (sensor) {
+      console.log('sensor disabled:', sensor)
+    })
+  </script>
+
+</body>
+</html>

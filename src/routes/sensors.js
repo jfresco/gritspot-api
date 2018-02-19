@@ -29,6 +29,7 @@ router.put('/sensor/:id', (req, res) => {
   }
 
   sensor.disable()
+  req.io.emit('sensor-disabled', { sensor: sensor.attrs })
   res.send({ sensor: sensor.attrs })
 })
 
