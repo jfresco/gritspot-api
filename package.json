@@ -8,7 +8,7 @@
     "debug": "node debug src",
     "test": "mocha src/**/*.spec.js",
     "lint": "eslint .",
-    "doc": "apidoc -i src"
+    "doc": "apidoc -i src && open doc/index.html"
   },
   "keywords": [],
   "author": "",
