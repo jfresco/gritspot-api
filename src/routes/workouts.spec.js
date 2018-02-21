@@ -7,7 +7,7 @@ const { Sensors, Workouts } = require('../db')
 
 describe('Workouts endpoints', () => {
   afterEach(() => {
-    Workouts.findById('123').removeAllocations()
+    Workouts.clearAllocations('123')
   })
 
   describe('GET /workouts', () => {
@@ -59,14 +59,14 @@ describe('Workouts endpoints', () => {
         .send({ participants })
         .expect(200)
 
-      const before = Workouts.findById('123').attrs.allocations.map(a => a.sensor_id)
+      const before = Workouts.findById('123').allocations.map(a => a.sensor_id)
 
       const { body } = await request(app)
         .put('/workout/123/allocations')
         .send({ user_id: 'bbb' })
         .expect(200)
 
-      const after = Workouts.findById('123').attrs.allocations.map(a => a.sensor_id)
+      const after = Workouts.findById('123').allocations.map(a => a.sensor_id)
 
       // Validate response
       expect(body.workout.allocations[0].sensor_id).to.equal(after[0])
@@ -129,9 +129,9 @@ describe('Workouts endpoints', () => {
     it('allocates sensors', () => {
       const participants = ['aaa', 'bbb', 'ccc']
       const availableSensors = Sensors.getAllocatable()
-        .filter(s => !s.attrs.owner_id)
+        .filter(s => !s.owner_id)
         .slice(0, 3)
-        .map(s => s.attrs.id)
+        .map(s => s.id)
 
       return request(app)
         .post('/workout/123/allocations')
@@ -146,8 +146,8 @@ describe('Workouts endpoints', () => {
           })
 
           // Validate that the DB holds the same data
-          const { attrs } = Workouts.findById('123')
-          expect(body.workout).to.deep.equal(attrs)
+          const workout = Workouts.findById('123')
+          expect(body.workout).to.deep.equal(workout)
         })
     })
 
@@ -165,8 +165,8 @@ describe('Workouts endpoints', () => {
           expect(body.workout.allocations.some(a => a.sensor_id === '13' && a.user_id === 'sam'))
 
           // Validate that the DB holds the same data
-          const { attrs } = Workouts.findById('48582')
-          expect(body.workout).to.deep.equal(attrs)
+          const workout = Workouts.findById('48582')
+          expect(body.workout).to.deep.equal(workout)
         })
     })
 
@@ -182,12 +182,12 @@ describe('Workouts endpoints', () => {
 
           // Validate that the DB holds the same data
           const after = Workouts.findById('48582')
-          expect(after.attrs).to.deep.equal(before.attrs)
+          expect(after).to.deep.equal(before)
         })
     })
 
     it('fails if there are not enough sensors', () => {
-      const availableSensors = Sensors.getAllocatable().map(s => s.attrs.id)
+      const availableSensors = Sensors.getAllocatable().map(s => s.id)
       const participants = times(availableSensors.length + 5, i => `user_${i}`)
       return request(app)
         .post('/workout/123/allocations')

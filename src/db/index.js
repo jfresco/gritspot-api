@@ -1,3 +1,4 @@
-const data = require('./data.json')
+const JsonFileStrategy = require('./strategies/json-file-strategy')
 
-module.exports = require('./api')(data)
+// Eventually, more strategies can be added in order to add more data sources (e.g., a database)
+module.exports = require('./api')(JsonFileStrategy)

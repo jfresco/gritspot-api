@@ -1,41 +1,54 @@
-const { Workout, Sensor } = require('./entities')
-
-module.exports = function (data) {
+module.exports = function (repository) {
   const Workouts = {
     all: () => {
-      return data.workouts.map(Workout)
+      return repository.getAllWorkouts()
     },
 
     findById: (id) => {
-      const workout = data.workouts.find(w => w.id === id)
-      return workout && Workout(workout)
+      return repository.getWorkoutById(id)
+    },
+
+    allocate: (workoutId, participants) => {
+      return repository.setAllocations(workoutId, participants)
+    },
+
+    reassign: function (workoutId, userId, sensorId) {
+      return repository.reassignSensor(workoutId, userId, sensorId)
+    },
+
+    addParticipant: function (workoutId, userId, sensorId, isOwner) {
+      return repository.addParticipantToWorkout(workoutId, userId, sensorId, isOwner)
+    },
+
+    getUsedSensorIds: function (workoutId) {
+      const workout = this.findById(workoutId)
+      return workout.allocations.map(a => a.sensor_id)
+    },
+
+    clearAllocations: function (workoutId) {
+      return repository.setAllocations(workoutId, [])
     }
   }
 
   const Sensors = {
     all: () => {
-      return data.sensors.map(Sensor)
+      return repository.getAllSensors()
     },
 
     findById: (id) => {
-      const sensor = data.sensors.find(s => s.id === id)
-      return sensor && Sensor(sensor)
+      return repository.getSensorById(id)
     },
 
     getAllocatable: () => {
-      return data.sensors.filter(s => s.is_allocatable).map(Sensor)
+      return repository.getAllocatableSensors()
     },
 
     getAllocatableForUser: userId => {
-      const ownedSensor = data.sensors.find(s => s.owner_id === userId)
-      if (ownedSensor) {
-        return Sensor(ownedSensor)
-      }
+      return repository.getAllocatableSensorForUser(userId)
+    },
 
-      const sensors = data.sensors.filter(s => s.is_allocatable)
-      return sensors.length > 0
-        ? Sensor(sensors[0])
-        : undefined
+    disable: sensorId => {
+      return repository.disableSensor(sensorId)
     }
   }
 

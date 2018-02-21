@@ -2,6 +2,7 @@ const express = require('express')
 const { omit } = require('lodash')
 const router = express.Router()
 const { Workouts, Sensors } = require('../db')
+const { allocateSensors } = require('../controllers')
 
 function fetchWorkout (req, res, next) {
   const workout = Workouts.findById(req.params.id)
@@ -22,7 +23,7 @@ function fetchWorkout (req, res, next) {
  */
 
 router.get('/workouts', (req, res) => {
-  const workouts = Workouts.all().map(({ attrs }) => omit(attrs, 'allocations'))
+  const workouts = Workouts.all().map(workout => omit(workout, 'allocations'))
   res.send({ workouts })
 })
 
@@ -35,7 +36,7 @@ router.get('/workouts', (req, res) => {
  * @return {json} Something with this shape: `{ "workout": { "id": "123", "allocations": [] } }`
  */
 
-router.get('/workout/:id', fetchWorkout, ({ workout }, res) => res.send({ workout: workout.attrs }))
+router.get('/workout/:id', fetchWorkout, ({ workout }, res) => res.send({ workout }))
 
 /**
  * POST /workout/{id}/allocations
@@ -49,11 +50,11 @@ router.get('/workout/:id', fetchWorkout, ({ workout }, res) => res.send({ workou
  */
 
 router.post('/workout/:id/allocations', fetchWorkout, ({ io, workout, body: { participants } }, res) => {
-  const sensors = Sensors.getAllocatable()
   try {
-    workout.allocate(participants, sensors)
-    io.emit('allocation', { workout: workout.attrs })
-    res.send({ workout: workout.attrs })
+    allocateSensors(workout.id, participants)
+
+    io.emit('allocation', { workout })
+    res.send({ workout })
   } catch (e) {
     if (e.code === 'INSUFFICIENT_SENSORS') {
       return res.status(400).send({ error: 'Not enough sensors' })
@@ -74,21 +75,21 @@ router.post('/workout/:id/allocations', fetchWorkout, ({ io, workout, body: { pa
 
 router.put('/workout/:id/allocations', fetchWorkout, (req, res) => {
   const { user_id: userId } = req.body
-  const participantIds = req.workout.attrs.allocations.map(a => a.user_id)
+  const participantIds = req.workout.allocations.map(a => a.user_id)
 
   if (!participantIds.includes(userId)) {
     return res.status(400).send({ error: 'User does not participate in this workout' })
   }
 
-  const usedSensorIds = req.workout.getUsedSensorIds()
-  const notUsed = s => !usedSensorIds.includes(s.attrs.id)
-  const notOwned = s => !s.attrs.owner_id || s.attrs.owner_id === userId
+  const usedSensorIds = Workouts.getUsedSensorIds(req.workout.id)
+  const notUsed = s => !usedSensorIds.includes(s.id)
+  const notOwned = s => !s.owner_id || s.owner_id === userId
 
   // Get available sensors (that are allocatable, not used in the current workout, and not owned)
   const sensors = Sensors.getAllocatable()
     .filter(notUsed)
     .filter(notOwned)
-    .map(s => s.attrs.id)
+    .map(s => s.id)
 
   if (sensors.length === 0) {
     return res.status(400).send({ error: 'Not enough sensors' })
@@ -98,10 +99,11 @@ router.put('/workout/:id/allocations', fetchWorkout, (req, res) => {
   const sensorId = sensors[0]
 
   // Commit reassignment
-  req.workout.reassign(userId, sensorId)
+  Workouts.reassign(req.workout.id, userId, sensorId)
 
   // Push notification to subscribed clients
   req.io.emit('sensor-reassignment', {
+    workout_id: req.workout.id,
     allocation: {
       user_id: userId,
       sensor_id: sensorId
@@ -109,7 +111,7 @@ router.put('/workout/:id/allocations', fetchWorkout, (req, res) => {
   })
 
   // Respond request with the workout attributes
-  res.send({ workout: req.workout.attrs })
+  res.send({ workout: req.workout })
 })
 
 router.post('/workout/:id/allocations/participant', fetchWorkout, (req, res) => {
@@ -119,16 +121,16 @@ router.post('/workout/:id/allocations/participant', fetchWorkout, (req, res) => 
     return res.status(400).send({ error: 'Not enough sensors' })
   }
 
-  req.workout.addParticipant(userId, sensor.attrs.id, sensor.attrs.owner_id === userId)
+  Workouts.addParticipant(req.workout.id, userId, sensor.id, sensor.owner_id === userId)
 
   req.io.emit('participant-added', {
     allocation: {
       user_id: userId,
-      sensor_id: sensor.attrs.id
+      sensor_id: sensor.id
     }
   })
 
-  res.send({ workout: req.workout.attrs })
+  res.send({ workout: req.workout })
 })
 
 module.exports = router

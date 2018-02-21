@@ -19,7 +19,7 @@ router.put('/sensor/:id', (req, res) => {
     return res.status(404).send({ error: 'Not found' })
   }
 
-  if (!sensor.attrs.is_allocatable) {
+  if (!sensor.is_allocatable) {
     return res.status(400).send({ error: 'The sensor is already disabled' })
   }
 
@@ -28,9 +28,10 @@ router.put('/sensor/:id', (req, res) => {
     return res.status(400).send({ error: '`is_allocatable` is required and should be falsey' })
   }
 
-  sensor.disable()
-  req.io.emit('sensor-disabled', { sensor: sensor.attrs })
-  res.send({ sensor: sensor.attrs })
+  Sensors.disable(sensor.id)
+
+  req.io.emit('sensor-disabled', { sensor })
+  res.send({ sensor })
 })
 
 module.exports = router

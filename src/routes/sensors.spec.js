@@ -7,7 +7,8 @@ const { Sensors } = require('../db')
 describe('Sensors endpoints', () => {
   describe('PUT /sensor/{id}', () => {
     afterEach(() => {
-      Sensors.findById('0809').attrs.is_allocatable = true
+      const sensor = Sensors.findById('0809')
+      sensor.is_allocatable = true
     })
 
     it('disables broken sensors', () =>
