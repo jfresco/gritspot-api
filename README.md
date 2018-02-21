@@ -1,30 +1,26 @@
 # GRITSpot API challenge
 
-## How to install
+## Getting started
 You'll need Node.js >= 6 and `npm`.
 
-Clone this repo, `cd` to its directory and run `npm install`.
+To start, clone this repo, `cd` to its directory and run `npm install`. All operations can be done through `npm` commands. Here's a handy guide:
 
-## How to run
+* `npm start` will start the app in port 3000.
+* `npm t` will run unit tests.
+* `npm run lint` will check code style
+* `npm run doc` will show API spec
 
-`npm start` will start the app in port 3000
+## Contributing
 
-`npm t` (short for `npm test`) will run unit tests.
+### Hitchhiker's guide
 
-## Code style
+This is a standard `express` application. `src/index.js` is a good place to start and follow the `require`s. Here's a guide to set what you might expect of each directory.
 
-Run `npm run lint` to check code style.
+- `app.js` - App entry point. Mounts routes and middlewares into the `express` instance, as long as injects it real-time features.
+- `routes` - Contains the routes handlers. Database access can be made here, but for complex business cases, functions from `controllers` are invoked.
+- `controllers` - Contains complex business logic. Can access database.
+- `db` - Database access. An API is provided to perform atomic operations. The implementation uses the Strategy pattern in order to furtherly plug other database clients without changing the API exposed to routes and controllers.
 
-## API docs
+### Real-time features
 
-Run `npm run doc` to see the API spec. The generated HTML can be hosted in any server to be publicly accessible.
-
-## Pending tasks
-- [x] Consider the case when the user owns a sensor
-- [x] Real-time features
-- [x] Re-assign sensor to user after allocation
-- [x] Change sensors when the workout is running
-- [x] Add new participant when the workout is running
-- [ ] Security (request/response validation)
-- [ ] Frontend app
-- [ ] Documentation
+Operations that makes modifications to the data are published through a WebSockets interface. Use a `socket.io` client in your frontend app in order to get instantly notified.
