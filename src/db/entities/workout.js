@@ -42,6 +42,16 @@ module.exports = function Workout (attrs) {
       }))
     },
 
+    addParticipant: function (userId, sensorId, isOwner) {
+      const now = new Date().toISOString()
+      attrs.allocations.push({
+        user_id: userId,
+        sensor_id: sensorId,
+        sensor_is_user_property: isOwner,
+        created_at: now
+      })
+    },
+
     getUsedSensorIds: function () {
       return attrs.allocations.map(a => a.sensor_id)
     },

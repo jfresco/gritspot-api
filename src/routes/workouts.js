@@ -112,4 +112,23 @@ router.put('/workout/:id/allocations', fetchWorkout, (req, res) => {
   res.send({ workout: req.workout.attrs })
 })
 
+router.post('/workout/:id/allocations/participant', fetchWorkout, (req, res) => {
+  const { user_id: userId } = req.body
+  const sensor = Sensors.getAllocatableForUser(userId)
+  if (!sensor) {
+    return res.status(400).send({ error: 'Not enough sensors' })
+  }
+
+  req.workout.addParticipant(userId, sensor.attrs.id, sensor.attrs.owner_id === userId)
+
+  req.io.emit('participant-added', {
+    allocation: {
+      user_id: userId,
+      sensor_id: sensor.attrs.id
+    }
+  })
+
+  res.send({ workout: req.workout.attrs })
+})
+
 module.exports = router

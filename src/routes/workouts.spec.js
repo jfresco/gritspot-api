@@ -108,6 +108,23 @@ describe('Workouts endpoints', () => {
     })
   })
 
+  describe('POST /workout/{id}/allocations/participant', () => {
+    it('adds a new participant', async () => {
+      await request(app)
+        .post('/workout/123/allocations')
+        .send({ participants: ['aaa', 'bbb', 'ccc'] })
+        .expect(200)
+
+      const { body } = await request(app)
+        .post('/workout/123/allocations/participant')
+        .send({ user_id: 'ddd' })
+        .expect(200)
+
+      const participants = body.workout.allocations.map(a => a.user_id)
+      expect(participants.includes('ddd'))
+    })
+  })
+
   describe('POST /workout/{id}/allocations', () => {
     it('allocates sensors', () => {
       const participants = ['aaa', 'bbb', 'ccc']

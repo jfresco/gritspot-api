@@ -20,7 +20,7 @@ Run `npm run lint` to check code style.
 - [x] Real-time features
 - [x] Re-assign sensor to user after allocation
 - [x] Change sensors when the workout is running
-- [ ] Add new participant when the workout is running
+- [x] Add new participant when the workout is running
 - [ ] Security (request/response validation)
 - [ ] Frontend app
 - [ ] Documentation

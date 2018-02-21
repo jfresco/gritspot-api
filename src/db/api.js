@@ -24,6 +24,18 @@ module.exports = function (data) {
 
     getAllocatable: () => {
       return data.sensors.filter(s => s.is_allocatable).map(Sensor)
+    },
+
+    getAllocatableForUser: userId => {
+      const ownedSensor = data.sensors.find(s => s.owner_id === userId)
+      if (ownedSensor) {
+        return Sensor(ownedSensor)
+      }
+
+      const sensors = data.sensors.filter(s => s.is_allocatable)
+      return sensors.length > 0
+        ? Sensor(sensors[0])
+        : undefined
     }
   }
 
