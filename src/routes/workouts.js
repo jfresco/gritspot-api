@@ -1,8 +1,9 @@
 const express = require('express')
 const { omit } = require('lodash')
 const router = express.Router()
+
 const { Workouts, Sensors } = require('../db')
-const { allocateSensors } = require('../controllers')
+const { allocateSensors, reassignSensor } = require('../controllers')
 
 function fetchWorkout (req, res, next) {
   const workout = Workouts.findById(req.params.id)
@@ -73,64 +74,46 @@ router.post('/workout/:id/allocations', fetchWorkout, ({ io, workout, body: { pa
  * @return {json} The resulting `Workout`
  */
 
-router.put('/workout/:id/allocations', fetchWorkout, (req, res) => {
-  const { user_id: userId } = req.body
-  const participantIds = req.workout.allocations.map(a => a.user_id)
+router.put('/workout/:id/allocations', fetchWorkout, ({ io, workout, body: { user_id: userId } }, res) => {
+  try {
+    const sensorId = reassignSensor(workout.id, userId)
 
-  if (!participantIds.includes(userId)) {
-    return res.status(400).send({ error: 'User does not participate in this workout' })
-  }
+    // Push notification to subscribed clients
+    io.emit('sensor-reassignment', {
+      workout_id: workout.id,
+      allocation: {
+        user_id: userId,
+        sensor_id: sensorId
+      }
+    })
 
-  const usedSensorIds = Workouts.getUsedSensorIds(req.workout.id)
-  const notUsed = s => !usedSensorIds.includes(s.id)
-  const notOwned = s => !s.owner_id || s.owner_id === userId
-
-  // Get available sensors (that are allocatable, not used in the current workout, and not owned)
-  const sensors = Sensors.getAllocatable()
-    .filter(notUsed)
-    .filter(notOwned)
-    .map(s => s.id)
-
-  if (sensors.length === 0) {
-    return res.status(400).send({ error: 'Not enough sensors' })
-  }
-
-  // Grab the first sensor in the list
-  const sensorId = sensors[0]
-
-  // Commit reassignment
-  Workouts.reassign(req.workout.id, userId, sensorId)
-
-  // Push notification to subscribed clients
-  req.io.emit('sensor-reassignment', {
-    workout_id: req.workout.id,
-    allocation: {
-      user_id: userId,
-      sensor_id: sensorId
+    // Respond request with the workout attributes
+    res.send({ workout })
+  } catch (err) {
+    if (err.code === 'INSUFFICIENT_SENSORS' || err.code === 'USER_IS_NOT_PARTICIPANT') {
+      return res.status(400).send({ error: err.message })
     }
-  })
 
-  // Respond request with the workout attributes
-  res.send({ workout: req.workout })
+    throw err
+  }
 })
 
-router.post('/workout/:id/allocations/participant', fetchWorkout, (req, res) => {
-  const { user_id: userId } = req.body
+router.post('/workout/:id/allocations/participant', fetchWorkout, ({ io, workout, body: { user_id: userId } }, res) => {
   const sensor = Sensors.getAllocatableForUser(userId)
   if (!sensor) {
     return res.status(400).send({ error: 'Not enough sensors' })
   }
 
-  Workouts.addParticipant(req.workout.id, userId, sensor.id, sensor.owner_id === userId)
+  Workouts.addParticipant(workout.id, userId, sensor.id, sensor.owner_id === userId)
 
-  req.io.emit('participant-added', {
+  io.emit('participant-added', {
     allocation: {
       user_id: userId,
       sensor_id: sensor.id
     }
   })
 
-  res.send({ workout: req.workout })
+  res.send({ workout })
 })
 
 module.exports = router

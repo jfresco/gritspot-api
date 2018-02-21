@@ -53,6 +53,7 @@ module.exports = {
     const workout = getWorkoutById(workoutId)
     const allocation = workout.allocations.find(a => a.user_id === userId)
     allocation.sensor_id = sensorId
+    allocation.updated_at = new Date().toISOString()
   },
 
   addParticipantToWorkout: function (workoutId, userId, sensorId, isOwner) {
