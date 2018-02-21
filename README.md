@@ -15,6 +15,9 @@ Clone this repo, `cd` to its directory and run `npm install`.
 
 Run `npm run lint` to check code style.
 
+## API
+Read the [API docs](https://github.com/jfresco/gritspot-api/blob/master/doc/index.html).
+
 ## Pending tasks
 - [x] Consider the case when the user owns a sensor
 - [x] Real-time features

@@ -16,11 +16,20 @@ function fetchWorkout (req, res, next) {
 }
 
 /**
- * GET /workouts
+ * @api {get} /workouts Get all workouts
+ * @apiName GetWorkouts
+ * @apiGroup Workouts
  *
- * Returns all workouts without allocations.
+ * @apiSuccess {Object[]} workouts Workouts without allocations
+ * @apiSuccessExample {json} Success-Response
+ *  HTTP/1.1 200 OK
+ *  {
+ *    "workouts": [
+ *      { "id": "123" },
+ *      { "id": "456" }
+ *    ]
+ *  }
  *
- * @return {json} Something with this shape: `{ "workouts": [{ "id": "123" }, { "id": "456" }] }`
  */
 
 router.get('/workouts', (req, res) => {
@@ -29,25 +38,72 @@ router.get('/workouts', (req, res) => {
 })
 
 /**
- * GET /workout/{id}
+ * @api {get} /workout/:id Get a single workout
+ * @apiName GetWorkout
+ * @apiGroup Workouts
  *
- * Returns a single workout with all its attributes.
+ * @apiParam {String} id The workout ID
  *
- * @param {string} id - A workout ID
- * @return {json} Something with this shape: `{ "workout": { "id": "123", "allocations": [] } }`
+ * @apiSuccess {Object} workout A single workout with its allocations
+ * @apiSuccessExample {json} Success-Response
+ *  HTTP/1.1 200 OK
+ *  {
+ *    "workout": {
+ *      "id": "123",
+ *      "allocations": [
+ *        {
+ *          "user_id": "pmccartney",
+ *          "sensor_id": "0883",
+ *          "sensor_is_user_property": true,
+ *          "created_at": "2018-02-21T17:27:38.878Z",
+ *          "updated_at": "2018-02-21T17:32:31.001Z"
+ *        }
+ *      ]
+ *    }
+ *  }
+ *
+ * @apiError WorkoutNotFound The <code>id</code> of the Workout was not found.
+ * @apiErrorExample {json} Error-Response
+ *   HTTP/1.1 404 Not Found
+ *   {
+ *     "error": "Not found"
+ *   }
  */
 
 router.get('/workout/:id', fetchWorkout, ({ workout }, res) => res.send({ workout }))
 
 /**
- * POST /workout/{id}/allocations
+ * @api {post} /workout/:id/allocations Allocates sensors to users in a workout
+ * @apiName CreateAllocations
+ * @apiGroup Workouts
  *
- * Allocates sensors to users in a given workout. The `allocations` attribute gets populated with `Allocation`
- * objects. If there is not enough sensors, it will fail and respond with HTTP status code 400.
+ * @apiParam {String} id The workout ID
+ * @apiParam (body) {String[]} participants An array of user IDs
  *
- * @param {string} id - A workout ID
- * @param {string[]} body.participants - Array of User IDs
- * @return {json} The resulting `Workout`
+ * @apiSuccess {Object} workout The resulting workout with the new allocations
+ * @apiSuccessExample {json} Success-Response
+ *  HTTP/1.1 200 OK
+ *  {
+ *    "workout": {
+ *      "id": "123",
+ *      "allocations": [
+ *        {
+ *          "user_id": "pmccartney",
+ *          "sensor_id": "0883",
+ *          "sensor_is_user_property": true,
+ *          "created_at": "2018-02-21T17:27:38.878Z",
+ *          "updated_at": "2018-02-21T17:32:31.001Z"
+ *        }
+ *      ]
+ *    }
+ *  }
+ *
+ * @apiError InsufficientSensors There are no enough available sensors for that users
+ * @apiErrorExample {json} Error-Response
+ *   HTTP/1.1 400 Bad Request
+ *   {
+ *     "error": "Not enough sensors"
+ *   }
  */
 
 router.post('/workout/:id/allocations', fetchWorkout, ({ io, workout, body: { participants } }, res) => {
@@ -65,13 +121,45 @@ router.post('/workout/:id/allocations', fetchWorkout, ({ io, workout, body: { pa
 })
 
 /**
- * PUT /workout/{id}/allocations
+ * @api {put} /workout/:id/allocations Modifies allocation for one user
+ * @apiDescription Does not change sensor status.
+ * @apiName ModifyAllocation
+ * @apiGroup Workouts
  *
- * Modifies allocation for one user. Returns 400 if there are no sensors available. Does not disable sensor.
+ * @apiParam {String} id The workout ID
+ * @apiParam (body) {String} user_id The user ID
  *
- * @param {string} id - A workout ID
- * @param {string} body.user_id - User ID
- * @return {json} The resulting `Workout`
+ * @apiSuccess {Object} workout The resulting workout with the new allocation
+ * @apiSuccessExample {json} Success-Response
+ *  HTTP/1.1 200 OK
+ *  {
+ *    "workout": {
+ *      "id": "123",
+ *      "allocations": [
+ *        {
+ *          "user_id": "pmccartney",
+ *          "sensor_id": "0883",
+ *          "sensor_is_user_property": true,
+ *          "created_at": "2018-02-21T17:27:38.878Z",
+ *          "updated_at": "2018-02-21T17:32:31.001Z"
+ *        }
+ *      ]
+ *    }
+ *  }
+ *
+ * @apiError InsufficientSensors There are not enough available sensors
+ * @apiErrorExample {json} Error-Response
+ *   HTTP/1.1 400 Bad Request
+ *   {
+ *     "error": "Not enough sensors"
+ *   }
+ *
+ * @apiError UserNotFound User does not participate of this workout
+ * @apiErrorExample {json} Error-Response
+ *   HTTP/1.1 400 Bad Request
+ *   {
+ *     "error": "User does not participate in this workout"
+ *   }
  */
 
 router.put('/workout/:id/allocations', fetchWorkout, ({ io, workout, body: { user_id: userId } }, res) => {
@@ -97,6 +185,35 @@ router.put('/workout/:id/allocations', fetchWorkout, ({ io, workout, body: { use
     throw err
   }
 })
+
+/**
+ * @api {post} /workout/:id/allocations/participant Adds a new participant to the workout
+ * @apiDescription It allocates him a sensor
+ * @apiName AddParticipant
+ * @apiGroup Workouts
+ *
+ * @apiParam {String} id The workout ID
+ * @apiParam (body) {String} user_id The user ID
+ *
+ * @apiSuccess {Object} workout The resulting workout with the new allocation
+ * @apiSuccessExample {json} Success-Response
+ *  HTTP/1.1 200 OK
+ *  {
+ *    "workout": {
+ *      "id": "123",
+ *      "allocations": [
+ *        {
+ *          "user_id": "pmccartney",
+ *          "sensor_id": "0883",
+ *          "sensor_is_user_property": true,
+ *          "created_at": "2018-02-21T17:27:38.878Z",
+ *          "updated_at": "2018-02-21T17:32:31.001Z"
+ *        }
+ *      ]
+ *    }
+ *  }
+ *
+ */
 
 router.post('/workout/:id/allocations/participant', fetchWorkout, ({ io, workout, body: { user_id: userId } }, res) => {
   const sensor = Sensors.getAllocatableForUser(userId)
