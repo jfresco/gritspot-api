@@ -5,6 +5,7 @@ const router = express.Router()
 const { Workouts, Sensors } = require('../db')
 const { allocateSensors, reassignSensor } = require('../controllers')
 
+/* Middleware that fetchs a single Workout and let it available in the `Request` object */
 function fetchWorkout (req, res, next) {
   const workout = Workouts.findById(req.params.id)
   if (!workout) {

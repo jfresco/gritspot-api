@@ -5,6 +5,16 @@ const isNotOwnerOfAny = sensors => participantId => !sensors
 
 const hasNoOwner = sensor => !sensor.owner_id
 
+/**
+ * Gets a list of allocations for participants that are owners of sensors
+ *
+ * @access private
+ * @param {string[]} participants A list of participants
+ * @param {Object[]} sensors A list of Sensor objects
+ * @return {Object[]} Allocations participants who don't owe sensors (other participants are ignored)
+ * @throws {Error} Throws an error if there are not enough sensors to allocate
+ */
+
 module.exports = function getAllocationsForNotOwners (participants, sensors) {
   const notReservedSensors = sensors.filter(hasNoOwner)
   const notOwners = participants.filter(isNotOwnerOfAny(sensors))
